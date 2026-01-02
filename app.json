@@ -6,11 +6,83 @@
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "scheme": "bibliotube",
+    "android": {
+      "package": "com.angelmayor.bibliotube",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": false,
+          "data": [
+            {
+              "scheme": "http",
+              "host": "*.youtube.com"
+            },
+            {
+              "scheme": "https",
+              "host": "*.youtube.com"
+            },
+            {
+              "scheme": "http",
+              "host": "youtu.be"
+            },
+            {
+              "scheme": "https",
+              "host": "youtu.be"
+            },
+            {
+              "scheme": "http",
+              "host": "*.instagram.com"
+            },
+            {
+              "scheme": "https",
+              "host": "*.instagram.com"
+            },
+            {
+              "scheme": "http",
+              "host": "*.tiktok.com"
+            },
+            {
+              "scheme": "https",
+              "host": "*.tiktok.com"
+            },
+            {
+              "scheme": "http",
+              "host": "vm.tiktok.com"
+            },
+            {
+              "scheme": "https",
+              "host": "vm.tiktok.com"
+            },
+            {
+              "scheme": "http",
+              "host": "vt.tiktok.com"
+            },
+            {
+              "scheme": "https",
+              "host": "vt.tiktok.com"
+            },
+            {
+              "scheme": "http",
+              "host": "*.facebook.com"
+            },
+            {
+              "scheme": "https",
+              "host": "*.facebook.com"
+            },
+            {
+              "scheme": "bibliotube",
+              "host": "*"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        }
+      ]
+    },
     "ios": {
       "bundleIdentifier": "com.angelmayor.bibliotube"
-    },
-    "android": {
-      "package": "com.angelmayor.bibliotube"
     },
     "plugins": [
       [

@@ -200,19 +200,36 @@ export default function App() {
     console.log('Procesando deep link:', url);
     
     // Extraer parámetros de la URL
-    // Formato: bibliotube://video?url=<VIDEO_URL>
-    if (url.includes('video')) {
-      const urlParams = new URL(url.replace('bibliotube://', 'http://')).searchParams;
-      const videoUrl = urlParams.get('url');
-      
-      if (videoUrl) {
-        setDeepLinkUrl(videoUrl);
-        // Navegar a la pantalla de agregar video
-        if (navigationRef.current) {
-          navigationRef.current.navigate('Home', { 
-            openAddVideoWithUrl: videoUrl 
-          });
-        }
+    // Formato 1: bibliotube://video?url=<VIDEO_URL>
+    // Formato 2: URL directa de video (youtube.com, instagram.com, tiktok.com, etc.)
+    let videoUrl = null;
+    
+    if (url.includes('bibliotube://')) {
+      // Formato personalizado: bibliotube://video?url=<VIDEO_URL>
+      if (url.includes('video')) {
+        const urlParams = new URL(url.replace('bibliotube://', 'http://')).searchParams;
+        videoUrl = urlParams.get('url');
+      }
+    } else if (
+      url.includes('youtube.com') || 
+      url.includes('youtu.be') ||
+      url.includes('instagram.com') ||
+      url.includes('tiktok.com') ||
+      url.includes('vm.tiktok.com') ||
+      url.includes('vt.tiktok.com') ||
+      url.includes('facebook.com')
+    ) {
+      // URL directa de video
+      videoUrl = url;
+    }
+    
+    if (videoUrl) {
+      setDeepLinkUrl(videoUrl);
+      // Navegar a la pantalla de agregar video
+      if (navigationRef.current) {
+        navigationRef.current.navigate('Home', { 
+          openAddVideoWithUrl: videoUrl 
+        });
       }
     }
   };
