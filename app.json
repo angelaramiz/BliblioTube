@@ -7,7 +7,6 @@
     "userInterfaceStyle": "light",
     "scheme": "bibliotube",
     "ios": {
-      "supportsTabletMode": true,
       "bundleIdentifier": "com.angelmayor.bibliotube"
     },
     "android": {
