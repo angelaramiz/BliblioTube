@@ -6,8 +6,19 @@
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "scheme": "bibliotube",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
     "android": {
       "package": "com.angelmayor.bibliotube",
+      "icon": "./assets/icon.png",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
       "intentFilters": [
         {
           "action": "VIEW",
@@ -82,7 +93,8 @@
       ]
     },
     "ios": {
-      "bundleIdentifier": "com.angelmayor.bibliotube"
+      "bundleIdentifier": "com.angelmayor.bibliotube",
+      "icon": "./assets/icon.png"
     },
     "plugins": [
       [
