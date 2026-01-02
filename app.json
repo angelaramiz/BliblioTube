@@ -22,73 +22,81 @@
       "intentFilters": [
         {
           "action": "VIEW",
-          "autoVerify": false,
-          "data": [
-            {
-              "scheme": "http",
-              "host": "*.youtube.com"
-            },
-            {
-              "scheme": "https",
-              "host": "*.youtube.com"
-            },
-            {
-              "scheme": "http",
-              "host": "youtu.be"
-            },
-            {
-              "scheme": "https",
-              "host": "youtu.be"
-            },
-            {
-              "scheme": "http",
-              "host": "*.instagram.com"
-            },
-            {
-              "scheme": "https",
-              "host": "*.instagram.com"
-            },
-            {
-              "scheme": "http",
-              "host": "*.tiktok.com"
-            },
-            {
-              "scheme": "https",
-              "host": "*.tiktok.com"
-            },
-            {
-              "scheme": "http",
-              "host": "vm.tiktok.com"
-            },
-            {
-              "scheme": "https",
-              "host": "vm.tiktok.com"
-            },
-            {
-              "scheme": "http",
-              "host": "vt.tiktok.com"
-            },
-            {
-              "scheme": "https",
-              "host": "vt.tiktok.com"
-            },
-            {
-              "scheme": "http",
-              "host": "*.facebook.com"
-            },
-            {
-              "scheme": "https",
-              "host": "*.facebook.com"
-            },
-            {
-              "scheme": "bibliotube",
-              "host": "*"
-            }
-          ],
           "category": [
             "BROWSABLE",
             "DEFAULT"
+          ],
+          "data": [
+            {
+              "scheme": "https",
+              "host": "*.youtube.com",
+              "pathPattern": "/watch.*"
+            },
+            {
+              "scheme": "https",
+              "host": "youtu.be",
+              "pathPattern": "/.*"
+            },
+            {
+              "scheme": "https",
+              "host": "www.youtube.com",
+              "pathPattern": "/watch.*"
+            },
+            {
+              "scheme": "https",
+              "host": "m.youtube.com",
+              "pathPattern": "/watch.*"
+            },
+            {
+              "scheme": "https",
+              "host": "*.instagram.com",
+              "pathPattern": "/p/.*"
+            },
+            {
+              "scheme": "https",
+              "host": "*.instagram.com",
+              "pathPattern": "/reel/.*"
+            },
+            {
+              "scheme": "https",
+              "host": "*.tiktok.com",
+              "pathPattern": "/.*"
+            },
+            {
+              "scheme": "https",
+              "host": "vm.tiktok.com",
+              "pathPattern": "/.*"
+            },
+            {
+              "scheme": "https",
+              "host": "vt.tiktok.com",
+              "pathPattern": "/.*"
+            },
+            {
+              "scheme": "https",
+              "host": "m.tiktok.com",
+              "pathPattern": "/.*"
+            },
+            {
+              "scheme": "https",
+              "host": "www.tiktok.com",
+              "pathPattern": "/.*"
+            },
+            {
+              "scheme": "https",
+              "host": "*.facebook.com",
+              "pathPattern": "/.*"
+            }
           ]
+        },
+        {
+          "action": "SEND",
+          "category": [
+            "DEFAULT"
+          ],
+          "data": {
+            "mimeType": "text/plain"
+          }
         }
       ]
     },
