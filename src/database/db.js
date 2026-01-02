@@ -240,6 +240,9 @@ export class DatabaseService {
         'UPDATE reminders SET isActive = ? WHERE id = ?',
         [isActive ? 1 : 0, reminderId]
       );
+    } catch (error) {
+      console.error('Error actualizando recordatorio:', error);
+    }
   }
 
   // ===== SINCRONIZACIÓN CON SUPABASE =====
