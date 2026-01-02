@@ -1,0 +1,31 @@
+{
+  "expo": {
+    "name": "BiblioTube",
+    "slug": "bibliotube",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "scheme": "bibliotube",
+    "ios": {
+      "supportsTabletMode": true,
+      "bundleIdentifier": "com.angelmayor.bibliotube"
+    },
+    "android": {
+      "package": "com.angelmayor.bibliotube"
+    },
+    "plugins": [
+      [
+        "expo-notifications",
+        {
+          "color": "#ffffff"
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "8361a37a-c645-45dd-8bec-21dad19ea9bd"
+      }
+    },
+    "owner": "angelaramiz"
+  }
+}
