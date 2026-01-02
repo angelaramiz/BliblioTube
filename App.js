@@ -11,6 +11,7 @@ import RegisterScreen from './src/screens/RegisterScreen';
 import HomeScreen from './src/screens/HomeScreen';
 import FolderDetailScreen from './src/screens/FolderDetailScreen';
 import VideoDetailScreen from './src/screens/VideoDetailScreen';
+import QuickSaveScreen from './src/screens/QuickSaveScreen';
 import { AuthContext } from './src/context/AuthContext';
 import { AuthService } from './src/database/authService';
 import { DatabaseService } from './src/database/db';
@@ -149,6 +150,14 @@ function RootNavigator({ userToken, isLoading, onDeepLink }) {
             component={VideoDetailScreen}
             options={{ title: 'Detalles del Video' }}
           />
+          <Stack.Screen 
+            name="QuickSave" 
+            component={QuickSaveScreen}
+            options={{
+              title: 'Guardar Video',
+              headerShown: false,
+            }}
+          />
         </Stack.Navigator>
       )}
     </NavigationContainer>
@@ -203,6 +212,7 @@ export default function App() {
     // Formato 1: bibliotube://video?url=<VIDEO_URL>
     // Formato 2: URL directa de video (youtube.com, instagram.com, tiktok.com, etc.)
     let videoUrl = null;
+    let isExternalShare = false;
     
     if (url.includes('bibliotube://')) {
       // Formato personalizado: bibliotube://video?url=<VIDEO_URL>
@@ -219,17 +229,24 @@ export default function App() {
       url.includes('vt.tiktok.com') ||
       url.includes('facebook.com')
     ) {
-      // URL directa de video
+      // URL directa de video (compartida desde otra app)
       videoUrl = url;
+      isExternalShare = true;
     }
     
     if (videoUrl) {
       setDeepLinkUrl(videoUrl);
-      // Navegar a la pantalla de agregar video
+      // Si viene desde compartir externo, ir a QuickSave para mejor UX
       if (navigationRef.current) {
-        navigationRef.current.navigate('Home', { 
-          openAddVideoWithUrl: videoUrl 
-        });
+        if (isExternalShare) {
+          navigationRef.current.navigate('QuickSave', { 
+            videoUrl: videoUrl 
+          });
+        } else {
+          navigationRef.current.navigate('Home', { 
+            openAddVideoWithUrl: videoUrl 
+          });
+        }
       }
     }
   };
