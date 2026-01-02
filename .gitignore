@@ -1,0 +1,11 @@
+.expo
+node_modules/
+.env
+.env.local
+*.jks
+*.keystore
+*.mobileprovision
+*.ipa
+.DS_Store
+npm-debug.*
+Thumbs.db
