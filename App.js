@@ -227,6 +227,15 @@ export default function App() {
         const session = await AuthService.getCurrentSession();
         if (session && session.user) {
           dispatch({ type: 'RESTORE_TOKEN', payload: session.user.id });
+          
+          // Sincronizar datos al restaurar sesión
+          try {
+            await DatabaseService.syncLocalToSupabase(session.user.id);
+            await DatabaseService.syncSupabaseToLocal(session.user.id);
+            console.log('Sincronización completada al restaurar sesión');
+          } catch (syncError) {
+            console.error('Error en sincronización al restaurar sesión:', syncError);
+          }
         } else {
           dispatch({ type: 'RESTORE_TOKEN', payload: null });
         }
@@ -246,6 +255,16 @@ export default function App() {
           const result = await AuthService.signIn(email, password);
           if (result.success && result.user) {
             dispatch({ type: 'SIGN_IN', payload: result.user.id });
+            
+            // Sincronizar datos después del login
+            try {
+              await DatabaseService.syncLocalToSupabase(result.user.id);
+              await DatabaseService.syncSupabaseToLocal(result.user.id);
+              console.log('Sincronización completada después del login');
+            } catch (syncError) {
+              console.error('Error en sincronización:', syncError);
+            }
+            
             return { success: true };
           } else {
             return { success: false, error: result.error };
@@ -267,6 +286,15 @@ export default function App() {
           const result = await AuthService.signUp(email, username, password);
           if (result.success && result.user) {
             dispatch({ type: 'SIGN_UP', payload: result.user.id });
+            
+            // Sincronizar datos después del registro
+            try {
+              await DatabaseService.syncLocalToSupabase(result.user.id);
+              console.log('Datos locales subidos a Supabase después del registro');
+            } catch (syncError) {
+              console.error('Error en sincronización después del registro:', syncError);
+            }
+            
             return { success: true };
           } else {
             return { success: false, error: result.error };
