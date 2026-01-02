@@ -99,10 +99,6 @@ export default function VideoDetailScreen({ route, navigation }) {
       }
     }
   };
-        Alert.alert('Error', error.message);
-      }
-    }
-  };
 
   const platformColor = video
     ? VideoMetadataExtractor.getPlatformColor(video.platform)
