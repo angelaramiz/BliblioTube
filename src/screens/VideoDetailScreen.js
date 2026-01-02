@@ -91,13 +91,14 @@ export default function VideoDetailScreen({ route, navigation }) {
   const openVideo = async () => {
     if (video.url) {
       try {
-        const supported = await Linking.canOpenURL(video.url);
-        if (supported) {
-          await Linking.openURL(video.url);
-        } else {
-          Alert.alert('Error', 'No se puede abrir esta URL');
-        }
+        // Intentar abrir directamente sin canOpenURL ya que no siempre funciona
+        await Linking.openURL(video.url);
       } catch (error) {
+        console.error('Error abriendo URL:', error);
+        Alert.alert('Error', 'No se puede abrir esta URL. Verifica que tienes navegador instalado.');
+      }
+    }
+  };
         Alert.alert('Error', error.message);
       }
     }

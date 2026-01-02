@@ -257,8 +257,18 @@ export default function App() {
         // Inicializar base de datos
         await DatabaseService.initializeDatabase();
         
-        // Restaurar token si existe
-        const session = await AuthService.getCurrentSession();
+        // Intentar restaurar sesión guardada primero
+        let session = await AuthService.getCurrentSession();
+        
+        if (!session) {
+          // Si no hay sesión activa, intentar restaurar la guardada
+          const savedSession = await AuthService.restoreSavedSession();
+          if (savedSession) {
+            session = savedSession;
+            console.log('Sesión restaurada del almacenamiento seguro');
+          }
+        }
+
         if (session && session.user) {
           dispatch({ type: 'RESTORE_TOKEN', payload: session.user.id });
           

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   StyleSheet,
@@ -10,6 +10,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { AuthContext } from '../context/AuthContext';
+import { AuthService } from '../database/authService';
 
 export default function LoginScreen({ navigation }) {
   const { signIn } = React.useContext(AuthContext);
@@ -17,6 +18,41 @@ export default function LoginScreen({ navigation }) {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [biometricAvailable, setBiometricAvailable] = useState(false);
+
+  useEffect(() => {
+    checkBiometricAvailability();
+  }, []);
+
+  const checkBiometricAvailability = async () => {
+    const available = await AuthService.isBiometricAvailable();
+    setBiometricAvailable(available);
+  };
+
+  const handleBiometricLogin = async () => {
+    setLoading(true);
+    try {
+      const authenticated = await AuthService.authenticateWithBiometric();
+      if (authenticated) {
+        // Restaurar sesión guardada
+        const savedSession = await AuthService.restoreSavedSession();
+        if (savedSession && savedSession.user) {
+          const result = await signIn(null, null);
+          if (result.success) {
+            Alert.alert('Éxito', '¡Bienvenido de nuevo!');
+          } else {
+            Alert.alert('Error', 'No se pudo restaurar tu sesión');
+          }
+        } else {
+          Alert.alert('Error', 'No hay sesión guardada');
+        }
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Error en autenticación biométrica: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -103,6 +139,28 @@ export default function LoginScreen({ navigation }) {
           <Text style={styles.loginButtonText}>Iniciar Sesión</Text>
         )}
       </Pressable>
+
+      {/* Biometric Login Button */}
+      {biometricAvailable && (
+        <Pressable
+          style={({ pressed }) => [
+            styles.biometricButton,
+            pressed && styles.biometricButtonPressed,
+            loading && styles.loginButtonDisabled,
+          ]}
+          onPress={handleBiometricLogin}
+          disabled={loading}
+        >
+          {loading ? (
+            <ActivityIndicator color="#6366f1" />
+          ) : (
+            <>
+              <Text style={styles.biometricButtonIcon}>👆</Text>
+              <Text style={styles.biometricButtonText}>Usa biometría</Text>
+            </>
+          )}
+        </Pressable>
+      )}
 
       {/* Forgot Password */}
       <Pressable style={styles.forgotButton}>
@@ -219,6 +277,29 @@ const styles = StyleSheet.create({
   loginButtonText: {
     color: '#fff',
     fontSize: 16,
+    fontWeight: '600',
+  },
+  biometricButton: {
+    backgroundColor: '#f0f0f0',
+    borderWidth: 2,
+    borderColor: '#6366f1',
+    paddingVertical: 12,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+    flexDirection: 'row',
+    gap: 8,
+  },
+  biometricButtonPressed: {
+    opacity: 0.9,
+  },
+  biometricButtonIcon: {
+    fontSize: 20,
+  },
+  biometricButtonText: {
+    color: '#6366f1',
+    fontSize: 14,
     fontWeight: '600',
   },
   forgotButton: {

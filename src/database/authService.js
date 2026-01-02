@@ -1,4 +1,8 @@
 import { supabase } from '../config/supabase';
+import * as SecureStore from 'expo-secure-store';
+import * as LocalAuthentication from 'expo-local-authentication';
+
+const SESSION_KEY = 'bibliotube_session';
 
 export class AuthService {
   static async signUp(email, username, password) {
@@ -37,6 +41,11 @@ export class AuthService {
 
       if (error) throw error;
 
+      // Guardar sesión de forma segura
+      if (data.session) {
+        await SecureStore.setItemAsync(SESSION_KEY, JSON.stringify(data.session));
+      }
+
       return {
         success: true,
         user: data.user,
@@ -54,6 +63,10 @@ export class AuthService {
     try {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
+      
+      // Limpiar sesión guardada
+      await SecureStore.deleteItemAsync(SESSION_KEY);
+      
       return { success: true };
     } catch (error) {
       return {
@@ -80,6 +93,50 @@ export class AuthService {
     } catch (error) {
       console.error('Error obteniendo usuario:', error);
       return null;
+    }
+  }
+
+  // Restaurar sesión guardada
+  static async restoreSavedSession() {
+    try {
+      const savedSession = await SecureStore.getItemAsync(SESSION_KEY);
+      if (savedSession) {
+        const session = JSON.parse(savedSession);
+        return session;
+      }
+      return null;
+    } catch (error) {
+      console.error('Error restaurando sesión guardada:', error);
+      return null;
+    }
+  }
+
+  // Verificar disponibilidad de biometría
+  static async isBiometricAvailable() {
+    try {
+      const compatible = await LocalAuthentication.hasHardwareAsync();
+      if (!compatible) return false;
+
+      const enrolled = await LocalAuthentication.isEnrolledAsync();
+      return enrolled;
+    } catch (error) {
+      console.error('Error verificando biometría:', error);
+      return false;
+    }
+  }
+
+  // Autenticar con biometría
+  static async authenticateWithBiometric() {
+    try {
+      const result = await LocalAuthentication.authenticateAsync({
+        disableDeviceFallback: false,
+        reason: 'Usa biometría para acceder a tu cuenta',
+      });
+
+      return result.success;
+    } catch (error) {
+      console.error('Error en autenticación biométrica:', error);
+      return false;
     }
   }
 }
