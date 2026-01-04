@@ -64,7 +64,26 @@ export class AuthService {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
       
-      // Limpiar sesión guardada
+      // NO eliminar la sesión guardada para permitir login rápido con biometría después
+      // La sesión se elimina solo cuando se hace logout total o cambio de usuario
+      // await SecureStore.deleteItemAsync(SESSION_KEY);
+      
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
+  }
+
+  // Logout total - elimina la sesión guardada
+  static async signOutCompletely() {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      
+      // Limpiar sesión guardada completamente
       await SecureStore.deleteItemAsync(SESSION_KEY);
       
       return { success: true };
