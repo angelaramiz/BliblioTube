@@ -1,10 +1,10 @@
 # BiblioTube 📚
 
-Una aplicación móvil para organizar y guardar links de videos de diferentes plataformas (YouTube, Instagram, TikTok, etc.) en una biblioteca personalizada con categorías, recordatorios y sincronización en la nube.
+Una aplicación móvil para organizar y guardar links de videos de diferentes plataformas (YouTube, Instagram, TikTok, etc.) en una biblioteca personalizada con categorías, recordatorios, filtrado avanzado y sincronización en la nube.
 
 ## Características ✨
 
-- **Autenticación**: Registro e inicio de sesión con Supabase
+- **Autenticación**: Registro e inicio de sesión con Supabase + autenticación biométrica
 - **Carpetas Organizadas**: Crea carpetas con colores personalizados para categorizar videos
 - **Gestión de Videos**: Agrega links de videos con información automática (miniatura, plataforma)
 - **Recordatorios**: Configura recordatorios con diferentes frecuencias:
@@ -12,9 +12,19 @@ Una aplicación móvil para organizar y guardar links de videos de diferentes pl
   - Diariamente
   - Semanalmente (especifica día)
   - Cada X días
+- **Filtrado Avanzado** 🆕:
+  - Filtrar por plataforma (YouTube, Instagram, TikTok, Facebook, etc.)
+  - Ordenar por fecha (más reciente o más antiguo)
+  - Filtrar por nivel de importancia (1-5 estrellas) ⭐
+  - Filtros composables (aplicar múltiples a la vez)
+- **Nivel de Importancia**: Asigna importancia (1-5 estrellas) a cada video
 - **Múltiples Plataformas**: Soporta YouTube, Instagram, TikTok, Facebook, Twitter, Vimeo, Twitch
+- **Deep Linking**: Comparte videos desde otras apps directamente a BiblioTube
+- **Share Sheet**: Integración nativa con el sistema de compartir de Android/iOS
 - **Almacenamiento Local**: SQLite para datos locales
 - **Backend en Nube**: Supabase para autenticación y sincronización
+- **Session Persistence**: Tu sesión se mantiene después de cerrar la app
+- **Clipboard Detection**: Detecta automáticamente URLs de videos en el portapapeles
 
 ## Estructura del Proyecto
 
@@ -24,7 +34,8 @@ BiblioTube/
 │   ├── components/
 │   │   ├── FolderCard.js          # Card de carpeta
 │   │   ├── VideoCard.js           # Card de video
-│   │   └── ReminderModal.js       # Modal para recordatorios
+│   │   ├── ReminderModal.js       # Modal para recordatorios
+│   │   └── FilterModal.js         # Modal de filtrado (NUEVO)
 │   ├── context/
 │   │   ├── AuthContext.js         # Contexto de autenticación
 │   │   └── DatabaseContext.js     # Contexto de base de datos
@@ -44,7 +55,8 @@ BiblioTube/
 │   │   ├── RegisterScreen.js      # Pantalla de registro
 │   │   ├── HomeScreen.js          # Pantalla principal (carpetas)
 │   │   ├── FolderDetailScreen.js  # Pantalla de videos en carpeta
-│   │   └── VideoDetailScreen.js   # Pantalla de detalles del video
+│   │   ├── VideoDetailScreen.js   # Pantalla de detalles del video
+│   │   └── QuickSaveScreen.js     # Pantalla de guardado rápido
 │   ├── config/
 │   │   └── supabase.js            # Configuración de Supabase
 │   └── utils/
