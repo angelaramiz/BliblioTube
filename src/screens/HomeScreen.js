@@ -42,17 +42,17 @@ export default function HomeScreen({ navigation, route }) {
     '#ef4444', // Red
     '#14b8a6', // Teal
     '#f97316', // Orange
-    '#06b6d4', // Sky Blue
+    '#0ea5e9', // Sky Blue
     '#a855f7', // Purple
-    '#ec4899', // Rose
-    '#0ea5e9', // Bright Blue
+    '#f472b6', // Rose (changed from duplicate #ec4899)
+    '#3b82f6', // Bright Blue
     '#84cc16', // Lime
     '#f43f5e', // Crimson
-    '#06b6d4', // Turquoise
+    '#20c997', // Turquoise (changed from duplicate #06b6d4)
     '#d946ef', // Fuchsia
-    '#3b82f6', // Blue
-    '#10b981', // Green
-    '#f59e0b', // Yellow
+    '#2563eb', // Blue (changed from duplicate #3b82f6)
+    '#16a34a', // Green (changed from duplicate #10b981)
+    '#eab308', // Yellow (changed from duplicate #f59e0b)
   ];
 
   useEffect(() => {
