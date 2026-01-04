@@ -11,6 +11,7 @@ import {
   Linking,
   FlatList,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { DatabaseService } from '../database/db';
 import { NotificationService } from '../utils/notificationService';
 import { VideoMetadataExtractor } from '../utils/videoMetadataExtractor';
@@ -23,6 +24,7 @@ export default function VideoDetailScreen({ route, navigation }) {
   const [reminders, setReminders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [reminderModalVisible, setReminderModalVisible] = useState(false);
+  const [editingImportance, setEditingImportance] = useState(false);
 
   useEffect(() => {
     loadVideoData();
@@ -86,6 +88,23 @@ export default function VideoDetailScreen({ route, navigation }) {
         },
       ]
     );
+  };
+
+  const handleUpdateImportance = async (newImportance) => {
+    try {
+      await DatabaseService.updateVideo(
+        video.id,
+        video.title,
+        video.description,
+        video.thumbnail,
+        newImportance
+      );
+      setVideo({ ...video, importance: newImportance });
+      setEditingImportance(false);
+      Alert.alert('Éxito', 'Importancia actualizada');
+    } catch (error) {
+      Alert.alert('Error', 'No se pudo actualizar la importancia');
+    }
   };
 
   const openVideo = async () => {
@@ -171,6 +190,81 @@ export default function VideoDetailScreen({ route, navigation }) {
             <Text style={styles.description}>{video.description}</Text>
           </View>
         ) : null}
+
+        {/* Importance Section */}
+        <View style={styles.section}>
+          <View style={styles.importanceHeaderContainer}>
+            <Text style={styles.sectionTitle}>Nivel de Importancia</Text>
+            <Pressable
+              onPress={() => setEditingImportance(!editingImportance)}
+              style={({ pressed }) => [
+                styles.editButton,
+                pressed && styles.editButtonPressed,
+              ]}
+            >
+              <Ionicons
+                name={editingImportance ? 'checkmark' : 'pencil'}
+                size={18}
+                color="#6366f1"
+              />
+            </Pressable>
+          </View>
+
+          <View style={styles.importanceDisplay}>
+            {editingImportance ? (
+              <View style={styles.starsEditContainer}>
+                {[1, 2, 3, 4, 5].map((level) => (
+                  <Pressable
+                    key={level}
+                    onPress={() => handleUpdateImportance(level)}
+                    style={styles.starEditButton}
+                  >
+                    <Ionicons
+                      name={video.importance >= level ? 'star' : 'star-outline'}
+                      size={28}
+                      color={
+                        video.importance >= level
+                          ? level <= 2
+                            ? '#ef4444'
+                            : level === 3
+                            ? '#eab308'
+                            : '#22c55e'
+                          : '#d1d5db'
+                      }
+                    />
+                  </Pressable>
+                ))}
+              </View>
+            ) : (
+              <View style={styles.starsDisplayContainer}>
+                <View style={styles.starsRow}>
+                  {[1, 2, 3, 4, 5].map((level) => (
+                    <Ionicons
+                      key={level}
+                      name={video.importance >= level ? 'star' : 'star-outline'}
+                      size={24}
+                      color={
+                        video.importance >= level
+                          ? level <= 2
+                            ? '#ef4444'
+                            : level === 3
+                            ? '#eab308'
+                            : '#22c55e'
+                          : '#d1d5db'
+                      }
+                      style={{ marginRight: 4 }}
+                    />
+                  ))}
+                </View>
+                <Text style={styles.importanceLabel}>
+                  {['Muy Baja', 'Baja', 'Media', 'Alta', 'Muy Alta'][
+                    video.importance - 1
+                  ] || 'Media'}
+                </Text>
+              </View>
+            )}
+          </View>
+        </View>
 
         {/* Open Button */}
         <Pressable
@@ -457,5 +551,43 @@ const styles = StyleSheet.create({
     color: '#6366f1',
     fontWeight: '600',
     fontSize: 14,
+  },
+  importanceHeaderContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  editButton: {
+    padding: 6,
+  },
+  editButtonPressed: {
+    opacity: 0.7,
+  },
+  importanceDisplay: {
+    backgroundColor: '#f9f9f9',
+    padding: 16,
+    borderRadius: 8,
+  },
+  starsDisplayContainer: {
+    alignItems: 'center',
+  },
+  starsRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  starsEditContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+  },
+  starEditButton: {
+    padding: 8,
+  },
+  importanceLabel: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#666',
+    textAlign: 'center',
   },
 });
