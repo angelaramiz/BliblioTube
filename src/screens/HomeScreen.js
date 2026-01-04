@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import {
   View,
@@ -13,10 +13,12 @@ import {
 } from 'react-native';
 import { DatabaseService } from '../database/db';
 import { AuthService } from '../database/authService';
+import { AuthContext } from '../context/AuthContext';
 import FolderCard from '../components/FolderCard';
 import { SelectFolderModal } from '../components/SelectFolderModal';
 
 export default function HomeScreen({ navigation, route }) {
+  const authContext = useContext(AuthContext);
   const [folders, setFolders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
@@ -223,7 +225,8 @@ export default function HomeScreen({ navigation, route }) {
     );
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    // Mostrar alerta temporal de confirmación
     Alert.alert(
       'Cerrar Sesión',
       '¿Deseas cerrar sesión?',
@@ -233,10 +236,11 @@ export default function HomeScreen({ navigation, route }) {
           text: 'Cerrar Sesión',
           onPress: async () => {
             try {
-              await AuthService.signOut();
+              // Usar el context para logout
+              const result = await authContext.signOut();
               // La navegación se manejará automáticamente en App.js
             } catch (error) {
-              Alert.alert('Error', error.message);
+              console.error('Error en logout:', error);
             }
           },
           style: 'destructive',

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   StyleSheet,
@@ -10,11 +10,12 @@ import {
   Alert,
 } from 'react-native';
 
-export const ReminderModal = ({ visible, videoTitle, onClose, onSave }) => {
+export const ReminderModal = ({ visible, videoTitle, onClose, onSave, autoDismissDelay = 1500 }) => {
   const [time, setTime] = useState('10:00');
   const [frequency, setFrequency] = useState('once');
   const [dayOfWeek, setDayOfWeek] = useState(0);
   const [intervalDays, setIntervalDays] = useState('1');
+  const [successMessage, setSuccessMessage] = useState('');
 
   const frequencies = [
     { id: 'once', label: 'Una sola vez', icon: '⏰' },
@@ -25,7 +26,18 @@ export const ReminderModal = ({ visible, videoTitle, onClose, onSave }) => {
 
   const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
+  // Auto-dismiss después de guardar
+  useEffect(() => {
+    if (successMessage && autoDismissDelay > 0) {
+      const timer = setTimeout(() => {
+        onClose();
+      }, autoDismissDelay);
+      return () => clearTimeout(timer);
+    }
+  }, [successMessage, autoDismissDelay, onClose]);
+
   const handleSave = () => {
+    setSuccessMessage('✓ Recordatorio guardado');
     onSave({
       time,
       frequency,
@@ -43,18 +55,24 @@ export const ReminderModal = ({ visible, videoTitle, onClose, onSave }) => {
     >
       <View style={styles.overlay}>
         <View style={styles.container}>
-          {/* Header */}
-          <View style={styles.header}>
-            <Text style={styles.title}>Configurar Recordatorio</Text>
-            <Pressable onPress={onClose}>
-              <Text style={styles.closeButton}>✕</Text>
-            </Pressable>
-          </View>
+          {successMessage ? (
+            <View style={styles.successContainer}>
+              <Text style={styles.successText}>{successMessage}</Text>
+            </View>
+          ) : (
+            <>
+              {/* Header */}
+              <View style={styles.header}>
+                <Text style={styles.title}>Configurar Recordatorio</Text>
+                <Pressable onPress={onClose}>
+                  <Text style={styles.closeButton}>✕</Text>
+                </Pressable>
+              </View>
 
-          {/* Video Title */}
-          <Text style={styles.videoTitle} numberOfLines={2}>
-            {videoTitle}
-          </Text>
+              {/* Video Title */}
+              <Text style={styles.videoTitle} numberOfLines={2}>
+                {videoTitle}
+              </Text>
 
           {/* Time Input */}
           <View style={styles.section}>
@@ -148,6 +166,8 @@ export const ReminderModal = ({ visible, videoTitle, onClose, onSave }) => {
               <Text style={styles.saveButtonText}>Guardar Recordatorio</Text>
             </Pressable>
           </View>
+            </>
+          )}
         </View>
       </View>
     </Modal>
@@ -285,5 +305,17 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '600',
     fontSize: 14,
+  },
+  successContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    minHeight: 200,
+  },
+  successText: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#10b981',
+    textAlign: 'center',
   },
 });

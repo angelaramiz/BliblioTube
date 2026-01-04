@@ -11,16 +11,28 @@ import {
 import { DatabaseService } from '../database/db';
 import { AuthService } from '../database/authService';
 
-export const SelectFolderModal = ({ visible, videoUrl, onFolderSelected, onClose }) => {
+export const SelectFolderModal = ({ visible, videoUrl, onFolderSelected, onClose, autoDismissDelay = 2000 }) => {
   const [folders, setFolders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedFolderId, setSelectedFolderId] = useState(null);
+  const [successMessage, setSuccessMessage] = useState('');
 
   useEffect(() => {
     if (visible) {
       loadFolders();
+      setSuccessMessage('');
     }
   }, [visible]);
+
+  // Auto-dismiss después de seleccionar
+  useEffect(() => {
+    if (successMessage && autoDismissDelay > 0) {
+      const timer = setTimeout(() => {
+        onClose();
+      }, autoDismissDelay);
+      return () => clearTimeout(timer);
+    }
+  }, [successMessage, autoDismissDelay, onClose]);
 
   const loadFolders = async () => {
     try {
@@ -43,11 +55,15 @@ export const SelectFolderModal = ({ visible, videoUrl, onFolderSelected, onClose
   const handleConfirm = () => {
     if (selectedFolderId) {
       const selectedFolder = folders.find(f => f.id === selectedFolderId);
-      onFolderSelected({
-        folderId: selectedFolderId,
-        folderName: selectedFolder.name,
-        videoUrl,
-      });
+      setSuccessMessage('✓ Video guardado');
+      // Esperar un poco antes de cerrar para mostrar confirmación visual
+      setTimeout(() => {
+        onFolderSelected({
+          folderId: selectedFolderId,
+          folderName: selectedFolder.name,
+          videoUrl,
+        });
+      }, 300);
     }
   };
 
@@ -60,59 +76,67 @@ export const SelectFolderModal = ({ visible, videoUrl, onFolderSelected, onClose
     >
       <View style={styles.overlay}>
         <View style={styles.container}>
-          <Text style={styles.title}>Selecciona una carpeta</Text>
-          <Text style={styles.subtitle}>Para guardar el video en:</Text>
-
-          {loading ? (
-            <ActivityIndicator size="large" color="#6366f1" style={styles.loader} />
-          ) : folders.length === 0 ? (
-            <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>No hay carpetas disponibles</Text>
-              <Text style={styles.emptySubtext}>Crea una carpeta primero</Text>
+          {successMessage ? (
+            <View style={styles.successContainer}>
+              <Text style={styles.successText}>{successMessage}</Text>
             </View>
           ) : (
-            <FlatList
-              data={folders}
-              keyExtractor={(item) => item.id}
-              scrollEnabled={false}
-              renderItem={({ item }) => (
-                <Pressable
-                  style={[
-                    styles.folderItem,
-                    selectedFolderId === item.id && styles.folderItemSelected,
-                  ]}
-                  onPress={() => setSelectedFolderId(item.id)}
-                >
-                  <View
-                    style={[
-                      styles.folderColor,
-                      { backgroundColor: item.color || '#6366f1' },
-                    ]}
-                  />
-                  <Text style={styles.folderName}>{item.name}</Text>
-                  {selectedFolderId === item.id && (
-                    <Text style={styles.checkmark}>✓</Text>
-                  )}
-                </Pressable>
-              )}
-            />
-          )}
+            <>
+              <Text style={styles.title}>Selecciona una carpeta</Text>
+              <Text style={styles.subtitle}>Para guardar el video en:</Text>
 
-          <View style={styles.buttonsContainer}>
-            <Pressable
-              style={[styles.button, styles.cancelButton]}
-              onPress={onClose}
-            >
-              <Text style={styles.cancelButtonText}>Cancelar</Text>
-            </Pressable>
-            <Pressable
-              style={[styles.button, styles.confirmButton]}
-              onPress={handleConfirm}
-              disabled={!selectedFolderId}
-            >
-              <Text style={styles.confirmButtonText}>Continuar</Text>
-            </Pressable>
-          </View>
+              {loading ? (
+                <ActivityIndicator size="large" color="#6366f1" style={styles.loader} />
+              ) : folders.length === 0 ? (
+                <View style={styles.emptyContainer}>
+                  <Text style={styles.emptyText}>No hay carpetas disponibles</Text>
+                  <Text style={styles.emptySubtext}>Crea una carpeta primero</Text>
+                </View>
+              ) : (
+                <FlatList
+                  data={folders}
+                  keyExtractor={(item) => item.id}
+                  scrollEnabled={false}
+                  renderItem={({ item }) => (
+                    <Pressable
+                      style={[
+                        styles.folderItem,
+                        selectedFolderId === item.id && styles.folderItemSelected,
+                      ]}
+                      onPress={() => setSelectedFolderId(item.id)}
+                    >
+                      <View
+                        style={[
+                          styles.folderColor,
+                          { backgroundColor: item.color || '#6366f1' },
+                        ]}
+                      />
+                      <Text style={styles.folderName}>{item.name}</Text>
+                      {selectedFolderId === item.id && (
+                        <Text style={styles.checkmark}>✓</Text>
+                      )}
+                    </Pressable>
+                  )}
+                />
+              )}
+
+              <View style={styles.buttonsContainer}>
+                <Pressable
+                  style={[styles.button, styles.cancelButton]}
+                  onPress={onClose}
+                >
+                  <Text style={styles.cancelButtonText}>Cancelar</Text>
+                </Pressable>
+                <Pressable
+                  style={[styles.button, styles.confirmButton]}
+                  onPress={handleConfirm}
+                  disabled={!selectedFolderId}
+                >
+                  <Text style={styles.confirmButtonText}>Continuar</Text>
+                </Pressable>
+              </View>
+            </>
+          )}
         </View>
       </View>
     </Modal>
@@ -221,5 +245,17 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+  },
+  successContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    minHeight: 200,
+  },
+  successText: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#10b981',
+    textAlign: 'center',
   },
 });
