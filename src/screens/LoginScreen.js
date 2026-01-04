@@ -42,10 +42,8 @@ export default function LoginScreen({ navigation }) {
           // Usar el nuevo método para biometric login
           const signInResult = await signInWithRestoredSession(result.user.id);
           if (signInResult.success) {
-            // Mostrar alerta que se cierre automáticamente
-            Alert.alert('Éxito', '¡Bienvenido de nuevo!');
-            // Cerrar alerta después de 1 segundo
-            setTimeout(() => {}, 1000);
+            // Toast se mostrará y se cerrará automáticamente
+            showSuccess('¡Bienvenido de nuevo!');
           } else {
             showError('No se pudo completar el login. Intenta de nuevo.');
           }
