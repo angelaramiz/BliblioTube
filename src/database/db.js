@@ -11,7 +11,7 @@ export class DatabaseService {
   static async initializeDatabase() {
     try {
       // Crear tabla de carpetas
-      await db.execAsync(`
+      await db.runAsync(`
         CREATE TABLE IF NOT EXISTS folders (
           id TEXT PRIMARY KEY,
           userId TEXT NOT NULL,
@@ -22,7 +22,7 @@ export class DatabaseService {
       `);
 
       // Crear tabla de videos
-      await db.execAsync(`
+      await db.runAsync(`
         CREATE TABLE IF NOT EXISTS videos (
           id TEXT PRIMARY KEY,
           folderId TEXT NOT NULL,
@@ -38,8 +38,17 @@ export class DatabaseService {
         );
       `);
 
+      // Migración: Agregar columna importance si no existe
+      try {
+        await db.runAsync(`ALTER TABLE videos ADD COLUMN importance INTEGER DEFAULT 3;`);
+        console.log('✓ Columna importance agregada a tabla videos');
+      } catch (error) {
+        // La columna ya existe, esto es normal
+        console.log('ℹ️ Columna importance ya existe');
+      }
+
       // Crear tabla de recordatorios
-      await db.execAsync(`
+      await db.runAsync(`
         CREATE TABLE IF NOT EXISTS reminders (
           id TEXT PRIMARY KEY,
           videoId TEXT NOT NULL,
@@ -350,7 +359,8 @@ export class DatabaseService {
               });
 
             if (insertError) {
-              console.error('❌ Error insertando carpeta:', folder.name, insertError);
+              console.warn('⚠️ Error insertando carpeta (ignorado):', folder.name, insertError.message);
+              // No lanzar error, continuar con la sincronización
             } else {
               foldersSync++;
               console.log('✓ Carpeta creada:', folder.name);
