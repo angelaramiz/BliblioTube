@@ -353,11 +353,6 @@ export default function App() {
             console.error('⚠️ Error en sincronización automática:', syncError);
             // No interrumpir el flujo si falla la sincronización
           }
-            await DatabaseService.syncSupabaseToLocal(session.user.id);
-            console.log('Sincronización completada al restaurar sesión');
-          } catch (syncError) {
-            console.error('Error en sincronización al restaurar sesión:', syncError);
-          }
         } else {
           dispatch({ type: 'RESTORE_TOKEN', payload: null });
         }
