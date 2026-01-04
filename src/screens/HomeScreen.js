@@ -58,7 +58,13 @@ export default function HomeScreen({ navigation, route }) {
   useFocusEffect(
     React.useCallback(() => {
       loadFolders();
-    }, [])
+      
+      // Sincronizar datos bidireccionales cuando enfocas la pantalla
+      if (user) {
+        DatabaseService.syncBidirectional(user.id)
+          .catch(err => console.error('Sync error on focus:', err));
+      }
+    }, [user])
   );
 
   const initializeApp = async () => {

@@ -293,193 +293,348 @@ export class DatabaseService {
   }
 
   // ===== SINCRONIZACIÓN CON SUPABASE =====
-  static async syncLocalToSupabase(userId) {
+  
+  // Sincronización unificada bidireccional
+  static async syncBidirectional(userId) {
     try {
-      console.log('Iniciando sincronización local a Supabase...');
+      console.log('🔄 Iniciando sincronización bidireccional...');
+      const startTime = Date.now();
 
-      // Obtener todas las carpetas locales del usuario
-      const localFolders = await this.getFoldersByUser(userId);
+      // Paso 1: Sincronizar cambios locales a Supabase
+      await this.syncLocalToSupabase(userId);
       
-      for (const folder of localFolders) {
-        // Verificar si la carpeta ya existe en Supabase
-        const { data: existingFolder } = await supabase
-          .from('folders')
-          .select('id')
-          .eq('id', folder.id)
-          .single();
-
-        if (!existingFolder) {
-          // Subir carpeta a Supabase
-          const { error } = await supabase
-            .from('folders')
-            .insert({
-              id: folder.id,
-              user_id: folder.userId,
-              name: folder.name,
-              color: folder.color,
-              created_at: new Date(folder.createdDate).toISOString(),
-            });
-
-          if (error) {
-            console.error('Error subiendo carpeta a Supabase:', error);
-          } else {
-            console.log('Carpeta subida:', folder.name);
-          }
-        }
-
-        // Sincronizar videos de esta carpeta
-        const localVideos = await this.getVideosByFolder(folder.id);
-        
-        for (const video of localVideos) {
-          // Verificar si el video ya existe en Supabase
-          const { data: existingVideo } = await supabase
-            .from('videos')
-            .select('id')
-            .eq('id', video.id)
-            .single();
-
-          if (!existingVideo) {
-            // Subir video a Supabase
-            const { error } = await supabase
-              .from('videos')
-              .insert({
-                id: video.id,
-                folder_id: video.folderId,
-                title: video.title,
-                url: video.url,
-                platform: video.platform,
-                thumbnail: video.thumbnail,
-                description: video.description,
-                saved_at: new Date(video.savedDate).toISOString(),
-                importance: video.importance || 3,
-              });
-
-            if (error) {
-              console.error('Error subiendo video a Supabase:', error);
-            } else {
-              console.log('Video subido:', video.title);
-            }
-
-            // Sincronizar recordatorios del video
-            const localReminders = await this.getRemindersByVideo(video.id);
-            
-            for (const reminder of localReminders) {
-              // Verificar si el recordatorio ya existe en Supabase
-              const { data: existingReminder } = await supabase
-                .from('reminders')
-                .select('id')
-                .eq('id', reminder.id)
-                .single();
-
-              if (!existingReminder) {
-                // Subir recordatorio a Supabase
-                const { error } = await supabase
-                  .from('reminders')
-                  .insert({
-                    id: reminder.id,
-                    video_id: reminder.videoId,
-                    time: reminder.time,
-                    frequency: reminder.frequency,
-                    day_of_week: reminder.dayOfWeek,
-                    interval_days: reminder.intervalDays,
-                    is_active: reminder.isActive,
-                  });
-
-                if (error) {
-                  console.error('Error subiendo recordatorio a Supabase:', error);
-                } else {
-                  console.log('Recordatorio subido para video:', video.title);
-                }
-              }
-            }
-          }
-        }
-      }
-
-      console.log('Sincronización completada');
+      // Paso 2: Sincronizar cambios de Supabase a local
+      await this.syncSupabaseToLocal(userId);
+      
+      const duration = Date.now() - startTime;
+      console.log(`✅ Sincronización completada en ${duration}ms`);
     } catch (error) {
-      console.error('Error en sincronización:', error);
+      console.error('❌ Error en sincronización bidireccional:', error);
+      throw error;
     }
   }
 
+  // Sincronización local → Supabase (con detección de cambios)
+  static async syncLocalToSupabase(userId) {
+    try {
+      console.log('📤 Sincronizando cambios locales a Supabase...');
+
+      const localFolders = await this.getFoldersByUser(userId);
+      let foldersSync = 0;
+      let videosSync = 0;
+      let remindersSync = 0;
+      
+      for (const folder of localFolders) {
+        try {
+          // Obtener carpeta de Supabase
+          const { data: supabaseFolder, error: folderError } = await supabase
+            .from('folders')
+            .select('*')
+            .eq('id', folder.id)
+            .single();
+
+          if (folderError && folderError.code !== 'PGRST116') {
+            throw folderError;
+          }
+
+          if (!supabaseFolder) {
+            // Insertar carpeta nueva
+            const { error: insertError } = await supabase
+              .from('folders')
+              .insert({
+                id: folder.id,
+                user_id: folder.userId,
+                name: folder.name,
+                color: folder.color,
+                created_at: new Date(folder.createdDate).toISOString(),
+              });
+
+            if (insertError) {
+              console.error('❌ Error insertando carpeta:', folder.name, insertError);
+            } else {
+              foldersSync++;
+              console.log('✓ Carpeta creada:', folder.name);
+            }
+          } else {
+            // Actualizar carpeta existente si cambió
+            if (supabaseFolder.name !== folder.name || supabaseFolder.color !== folder.color) {
+              const { error: updateError } = await supabase
+                .from('folders')
+                .update({
+                  name: folder.name,
+                  color: folder.color,
+                })
+                .eq('id', folder.id);
+
+              if (updateError) {
+                console.error('❌ Error actualizando carpeta:', folder.name, updateError);
+              } else {
+                foldersSync++;
+                console.log('✓ Carpeta actualizada:', folder.name);
+              }
+            }
+          }
+
+          // Sincronizar videos de esta carpeta
+          const localVideos = await this.getVideosByFolder(folder.id);
+          
+          for (const video of localVideos) {
+            try {
+              const { data: supabaseVideo, error: videoError } = await supabase
+                .from('videos')
+                .select('*')
+                .eq('id', video.id)
+                .single();
+
+              if (videoError && videoError.code !== 'PGRST116') {
+                throw videoError;
+              }
+
+              if (!supabaseVideo) {
+                // Insertar video nuevo
+                const { error: insertError } = await supabase
+                  .from('videos')
+                  .insert({
+                    id: video.id,
+                    folder_id: video.folderId,
+                    title: video.title,
+                    url: video.url,
+                    platform: video.platform,
+                    thumbnail: video.thumbnail,
+                    description: video.description,
+                    saved_at: new Date(video.savedDate).toISOString(),
+                    importance: video.importance || 3,
+                  });
+
+                if (insertError) {
+                  console.error('❌ Error insertando video:', video.title, insertError);
+                } else {
+                  videosSync++;
+                  console.log('✓ Video creado:', video.title);
+                }
+              } else {
+                // Actualizar video existente si cambió
+                const hasChanges =
+                  supabaseVideo.title !== video.title ||
+                  supabaseVideo.description !== video.description ||
+                  supabaseVideo.thumbnail !== video.thumbnail ||
+                  supabaseVideo.importance !== (video.importance || 3);
+
+                if (hasChanges) {
+                  const { error: updateError } = await supabase
+                    .from('videos')
+                    .update({
+                      title: video.title,
+                      description: video.description,
+                      thumbnail: video.thumbnail,
+                      importance: video.importance || 3,
+                    })
+                    .eq('id', video.id);
+
+                  if (updateError) {
+                    console.error('❌ Error actualizando video:', video.title, updateError);
+                  } else {
+                    videosSync++;
+                    console.log('✓ Video actualizado:', video.title);
+                  }
+                }
+              }
+
+              // Sincronizar recordatorios del video
+              const localReminders = await this.getRemindersByVideo(video.id);
+              
+              for (const reminder of localReminders) {
+                try {
+                  const { data: supabaseReminder, error: reminderError } = await supabase
+                    .from('reminders')
+                    .select('*')
+                    .eq('id', reminder.id)
+                    .single();
+
+                  if (reminderError && reminderError.code !== 'PGRST116') {
+                    throw reminderError;
+                  }
+
+                  if (!supabaseReminder) {
+                    // Insertar recordatorio nuevo
+                    const { error: insertError } = await supabase
+                      .from('reminders')
+                      .insert({
+                        id: reminder.id,
+                        video_id: reminder.videoId,
+                        time: reminder.time,
+                        frequency: reminder.frequency,
+                        day_of_week: reminder.dayOfWeek,
+                        interval_days: reminder.intervalDays,
+                        is_active: reminder.isActive ? 1 : 0,
+                      });
+
+                    if (insertError) {
+                      console.error('❌ Error insertando recordatorio:', insertError);
+                    } else {
+                      remindersSync++;
+                      console.log('✓ Recordatorio creado');
+                    }
+                  }
+                } catch (reminderError) {
+                  console.error('❌ Error sincronizando recordatorio:', reminderError);
+                }
+              }
+            } catch (videoError) {
+              console.error('❌ Error sincronizando video:', videoError);
+            }
+          }
+        } catch (folderError) {
+          console.error('❌ Error sincronizando carpeta:', folderError);
+        }
+      }
+
+      console.log(`📤 Local → Supabase: ${foldersSync} carpetas, ${videosSync} videos, ${remindersSync} recordatorios`);
+    } catch (error) {
+      console.error('❌ Error en sincronización local → Supabase:', error);
+      throw error;
+    }
+  }
+
+  // Sincronización Supabase → local (con detección de cambios)
   static async syncSupabaseToLocal(userId) {
     try {
-      console.log('Iniciando sincronización Supabase a local...');
+      console.log('📥 Sincronizando cambios de Supabase a local...');
 
-      // Obtener carpetas de Supabase
       const { data: supabaseFolders, error: foldersError } = await supabase
         .from('folders')
         .select('*')
         .eq('user_id', userId);
 
       if (foldersError) {
-        console.error('Error obteniendo carpetas de Supabase:', foldersError);
-        return;
+        throw foldersError;
       }
 
-      for (const folderData of supabaseFolders) {
-        // Verificar si la carpeta existe localmente
-        const localFolders = await this.getFoldersByUser(userId);
-        const existingLocal = localFolders.find(f => f.id === folderData.id);
+      let foldersSync = 0;
+      let videosSync = 0;
+      let remindersSync = 0;
 
-        if (!existingLocal) {
-          // Insertar carpeta localmente
-          await db.runAsync(
-            'INSERT OR IGNORE INTO folders (id, userId, name, color, createdDate) VALUES (?, ?, ?, ?, ?)',
-            [folderData.id, folderData.user_id, folderData.name, folderData.color, new Date(folderData.created_at).getTime()]
-          );
-          console.log('Carpeta descargada:', folderData.name);
-        }
+      const localFolders = await this.getFoldersByUser(userId);
 
-        // Obtener videos de Supabase para esta carpeta
-        const { data: supabaseVideos, error: videosError } = await supabase
-          .from('videos')
-          .select('*')
-          .eq('folder_id', folderData.id);
+      for (const folderData of supabaseFolders || []) {
+        try {
+          const existingLocal = localFolders.find(f => f.id === folderData.id);
 
-        if (videosError) {
-          console.error('Error obteniendo videos de Supabase:', videosError);
-          continue;
-        }
-
-        for (const videoData of supabaseVideos) {
-          // Verificar si el video existe localmente
-          const localVideos = await this.getVideosByFolder(folderData.id);
-          const existingVideo = localVideos.find(v => v.id === videoData.id);
-
-          if (!existingVideo) {
-            // Insertar video localmente
+          if (!existingLocal) {
+            // Insertar carpeta nueva localmente
             await db.runAsync(
-              'INSERT OR IGNORE INTO videos (id, folderId, title, url, platform, thumbnail, description, savedDate, reminders, importance) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-              [videoData.id, videoData.folder_id, videoData.title, videoData.url, videoData.platform, videoData.thumbnail, videoData.description, new Date(videoData.saved_at).getTime(), '[]', videoData.importance || 3]
+              'INSERT OR IGNORE INTO folders (id, userId, name, color, createdDate) VALUES (?, ?, ?, ?, ?)',
+              [
+                folderData.id,
+                folderData.user_id,
+                folderData.name,
+                folderData.color,
+                new Date(folderData.created_at).getTime(),
+              ]
             );
-            console.log('Video descargado:', videoData.title);
+            foldersSync++;
+            console.log('✓ Carpeta descargada:', folderData.name);
+          }
 
-            // Obtener recordatorios de Supabase para este video
-            const { data: supabaseReminders, error: remindersError } = await supabase
-              .from('reminders')
-              .select('*')
-              .eq('video_id', videoData.id);
+          // Obtener videos de Supabase para esta carpeta
+          const { data: supabaseVideos, error: videosError } = await supabase
+            .from('videos')
+            .select('*')
+            .eq('folder_id', folderData.id);
 
-            if (remindersError) {
-              console.error('Error obteniendo recordatorios de Supabase:', remindersError);
-              continue;
-            }
+          if (videosError) {
+            throw videosError;
+          }
 
-            for (const reminderData of supabaseReminders) {
-              // Insertar recordatorio localmente
-              await db.runAsync(
-                'INSERT OR IGNORE INTO reminders (id, videoId, time, frequency, dayOfWeek, intervalDays, isActive) VALUES (?, ?, ?, ?, ?, ?, ?)',
-                [reminderData.id, reminderData.video_id, reminderData.time, reminderData.frequency, reminderData.day_of_week, reminderData.interval_days, reminderData.is_active ? 1 : 0]
-              );
+          const localVideos = await this.getVideosByFolder(folderData.id);
+
+          for (const videoData of supabaseVideos || []) {
+            try {
+              const existingVideo = localVideos.find(v => v.id === videoData.id);
+
+              if (!existingVideo) {
+                // Insertar video nuevo localmente
+                await db.runAsync(
+                  'INSERT OR IGNORE INTO videos (id, folderId, title, url, platform, thumbnail, description, savedDate, reminders, importance) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                  [
+                    videoData.id,
+                    videoData.folder_id,
+                    videoData.title,
+                    videoData.url,
+                    videoData.platform,
+                    videoData.thumbnail,
+                    videoData.description,
+                    new Date(videoData.saved_at).getTime(),
+                    '[]',
+                    videoData.importance || 3,
+                  ]
+                );
+                videosSync++;
+                console.log('✓ Video descargado:', videoData.title);
+              } else {
+                // Actualizar si hay cambios
+                const hasChanges =
+                  existingVideo.title !== videoData.title ||
+                  existingVideo.description !== videoData.description ||
+                  existingVideo.thumbnail !== videoData.thumbnail ||
+                  existingVideo.importance !== (videoData.importance || 3);
+
+                if (hasChanges) {
+                  await this.updateVideo(
+                    videoData.id,
+                    videoData.title,
+                    videoData.description,
+                    videoData.thumbnail,
+                    videoData.importance || 3
+                  );
+                  videosSync++;
+                  console.log('✓ Video actualizado:', videoData.title);
+                }
+              }
+
+              // Obtener recordatorios de Supabase para este video
+              const { data: supabaseReminders, error: remindersError } = await supabase
+                .from('reminders')
+                .select('*')
+                .eq('video_id', videoData.id);
+
+              if (remindersError) {
+                throw remindersError;
+              }
+
+              for (const reminderData of supabaseReminders || []) {
+                try {
+                  // Insertar recordatorio localmente si no existe
+                  await db.runAsync(
+                    'INSERT OR IGNORE INTO reminders (id, videoId, time, frequency, dayOfWeek, intervalDays, isActive) VALUES (?, ?, ?, ?, ?, ?, ?)',
+                    [
+                      reminderData.id,
+                      reminderData.video_id,
+                      reminderData.time,
+                      reminderData.frequency,
+                      reminderData.day_of_week,
+                      reminderData.interval_days,
+                      reminderData.is_active ? 1 : 0,
+                    ]
+                  );
+                  remindersSync++;
+                } catch (reminderError) {
+                  console.error('❌ Error sincronizando recordatorio:', reminderError);
+                }
+              }
+            } catch (videoError) {
+              console.error('❌ Error sincronizando video:', videoError);
             }
           }
+        } catch (folderError) {
+          console.error('❌ Error sincronizando carpeta:', folderError);
         }
       }
 
-      console.log('Sincronización de Supabase a local completada');
+      console.log(`📥 Supabase → Local: ${foldersSync} carpetas, ${videosSync} videos, ${remindersSync} recordatorios`);
     } catch (error) {
-      console.error('Error en sincronización Supabase a local:', error);
+      console.error('❌ Error en sincronización Supabase → Local:', error);
+      throw error;
     }
   }
 }

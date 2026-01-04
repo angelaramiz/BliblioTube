@@ -345,9 +345,14 @@ export default function App() {
         if (session && session.user) {
           dispatch({ type: 'RESTORE_TOKEN', payload: session.user.id });
           
-          // Sincronizar datos al restaurar sesión
+          // Sincronizar datos bidireccionales al restaurar sesión
           try {
-            await DatabaseService.syncLocalToSupabase(session.user.id);
+            await DatabaseService.syncBidirectional(session.user.id);
+            console.log('✅ Sincronización automática completada al iniciar');
+          } catch (syncError) {
+            console.error('⚠️ Error en sincronización automática:', syncError);
+            // No interrumpir el flujo si falla la sincronización
+          }
             await DatabaseService.syncSupabaseToLocal(session.user.id);
             console.log('Sincronización completada al restaurar sesión');
           } catch (syncError) {
