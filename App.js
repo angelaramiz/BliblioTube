@@ -4,7 +4,8 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import * as Notifications from 'expo-notifications';
 import { StatusBar } from 'expo-status-bar';
-import { Linking } from 'react-native';
+import { Linking, Alert } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 
 import LoginScreen from './src/screens/LoginScreen';
 import RegisterScreen from './src/screens/RegisterScreen';
@@ -205,6 +206,59 @@ export default function App() {
 
   const [deepLinkUrl, setDeepLinkUrl] = useState(null);
 
+  // Función para detectar URLs de video en el portapapeles
+  const checkClipboardForVideoUrl = async () => {
+    try {
+      const text = await Clipboard.getStringAsync();
+      
+      // Detectar si es una URL de video conocida
+      const isVideoUrl =
+        text.includes('youtube.com') ||
+        text.includes('youtu.be') ||
+        text.includes('instagram.com') ||
+        text.includes('tiktok.com') ||
+        text.includes('vm.tiktok.com') ||
+        text.includes('vt.tiktok.com') ||
+        text.includes('facebook.com');
+
+      if (isVideoUrl && text.startsWith('http')) {
+        return text;
+      }
+    } catch (error) {
+      console.log('No se pudo acceder al portapapeles');
+    }
+    return null;
+  };
+
+  // Procesar URL encontrada en portapapeles
+  const handleClipboardUrl = (url) => {
+    Alert.alert(
+      'Video detectado',
+      '¿Deseas guardar este video en BiblioTube?',
+      [
+        {
+          text: 'No',
+          onPress: () => {},
+          style: 'cancel',
+        },
+        {
+          text: 'Sí, guardar',
+          onPress: () => {
+            if (state.userToken) {
+              // Si está logueado, ir directamente a QuickSave
+              navigationRef.current?.navigate('QuickSave', {
+                videoUrl: url,
+              });
+            } else {
+              // Si no está logueado, guardar para después
+              setDeepLinkUrl(url);
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const handleDeepLink = (url) => {
     console.log('Procesando deep link:', url);
     
@@ -236,18 +290,37 @@ export default function App() {
     
     if (videoUrl) {
       setDeepLinkUrl(videoUrl);
-      // Si viene desde compartir externo, ir a QuickSave para mejor UX
-      if (navigationRef.current) {
-        if (isExternalShare) {
-          navigationRef.current.navigate('QuickSave', { 
-            videoUrl: videoUrl 
-          });
-        } else {
-          navigationRef.current.navigate('Home', { 
-            openAddVideoWithUrl: videoUrl 
-          });
+      console.log('Deep link procesado:', videoUrl);
+      
+      // Esperar a que navigationRef esté listo
+      setTimeout(() => {
+        if (navigationRef.current) {
+          if (state.userToken) {
+            // Si está logueado, ir directamente a QuickSave
+            navigationRef.current.navigate('QuickSave', {
+              videoUrl: videoUrl,
+            });
+          } else {
+            // Si no está logueado, mostrar alerta
+            Alert.alert(
+              'Inicia sesión',
+              'Necesitas iniciar sesión para guardar videos',
+              [
+                {
+                  text: 'Cancelar',
+                  style: 'cancel',
+                },
+                {
+                  text: 'Iniciar sesión',
+                  onPress: () => {
+                    // El usuario será redirigido automáticamente a Login
+                  },
+                },
+              ]
+            );
+          }
         }
-      }
+      }, 500);
     }
   };
 
@@ -282,6 +355,15 @@ export default function App() {
           }
         } else {
           dispatch({ type: 'RESTORE_TOKEN', payload: null });
+        }
+
+        // Verificar portapapeles después de restaurar sesión
+        const clipboardUrl = await checkClipboardForVideoUrl();
+        if (clipboardUrl) {
+          // Esperar un poco para que la navegación esté lista
+          setTimeout(() => {
+            handleClipboardUrl(clipboardUrl);
+          }, 1000);
         }
       } catch (e) {
         console.error('Error en bootstrap:', e);
