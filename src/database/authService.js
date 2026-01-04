@@ -41,11 +41,15 @@ export class AuthService {
 
       if (error) throw error;
 
-      // Guardar sesión de forma segura (incluyendo email)
+      // Guardar sesión de forma segura (incluyendo email y userId)
       if (data.session) {
         const sessionData = {
           ...data.session,
           email: email, // Guardar email para biometric login
+          user: {
+            id: data.user.id,
+            email: data.user.email,
+          },
         };
         await SecureStore.setItemAsync(SESSION_KEY, JSON.stringify(sessionData));
       }
@@ -151,11 +155,13 @@ export class AuthService {
       const savedSession = await SecureStore.getItemAsync(SESSION_KEY);
       if (savedSession) {
         const session = JSON.parse(savedSession);
-        // Solo retornar los datos guardados, sin intentar setSession
-        // El usuario ya debe estar autenticado en Supabase
+        // Retornar los datos guardados con el userId
         return {
           success: true,
-          user: { email: session.email, id: session.user?.id },
+          user: { 
+            id: session.user?.id,
+            email: session.email 
+          },
           session: session,
         };
       }

@@ -13,7 +13,7 @@ import { AuthContext } from '../context/AuthContext';
 import { AuthService } from '../database/authService';
 
 export default function LoginScreen({ navigation }) {
-  const { signIn } = React.useContext(AuthContext);
+  const { signIn, signInWithRestoredSession } = React.useContext(AuthContext);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -34,15 +34,18 @@ export default function LoginScreen({ navigation }) {
     try {
       const authenticated = await AuthService.authenticateWithBiometric();
       if (authenticated) {
-        // Intentar obtener la sesión activa (debe estar guardada en Supabase)
+        // Restaurar sesión
         const result = await AuthService.restoreSessionWithToken();
-        if (result.success && result.user) {
-          // Sesión restaurada correctamente
-          const signInResult = await signIn(result.user.email, '');
+        if (result.success && result.user && result.user.id) {
+          // Usar el nuevo método para biometric login
+          const signInResult = await signInWithRestoredSession(result.user.id);
           if (signInResult.success) {
+            // Mostrar alerta que se cierre automáticamente
             Alert.alert('Éxito', '¡Bienvenido de nuevo!');
+            // Cerrar alerta después de 1 segundo
+            setTimeout(() => {}, 1000);
           } else {
-            Alert.alert('Error', 'No se pudo restaurar tu sesión. Por favor, inicia sesión manualmente.');
+            Alert.alert('Error', 'No se pudo completar el login. Intenta de nuevo.');
           }
         } else {
           Alert.alert('Error', result.error || 'No hay sesión guardada. Por favor, inicia sesión primero.');

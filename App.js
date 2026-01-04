@@ -399,6 +399,25 @@ export default function App() {
           return { success: false, error: error.message };
         }
       },
+      signInWithRestoredSession: async (userId) => {
+        try {
+          // Para biometric login - solo dispatch sin re-autenticar
+          dispatch({ type: 'SIGN_IN', payload: userId });
+          
+          // Sincronizar datos después del restore
+          try {
+            await DatabaseService.syncBidirectional(userId);
+            console.log('Sincronización completada después de biometric login');
+          } catch (syncError) {
+            console.error('Error en sincronización:', syncError);
+          }
+          
+          return { success: true };
+        } catch (error) {
+          console.error('Error en signInWithRestoredSession:', error);
+          return { success: false, error: error.message };
+        }
+      },
       signOut: async () => {
         try {
           await AuthService.signOut();
