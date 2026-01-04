@@ -34,26 +34,15 @@ export default function LoginScreen({ navigation }) {
     try {
       const authenticated = await AuthService.authenticateWithBiometric();
       if (authenticated) {
-        // Restaurar sesión usando el token guardado
+        // Intentar obtener la sesión activa (debe estar guardada en Supabase)
         const result = await AuthService.restoreSessionWithToken();
         if (result.success && result.user) {
-          // Dispatch directamente sin necesidad de email/password
+          // Sesión restaurada correctamente
           const signInResult = await signIn(result.user.email, '');
           if (signInResult.success) {
             Alert.alert('Éxito', '¡Bienvenido de nuevo!');
           } else {
-            // Si hay error, intenta una vez más
-            const retryResult = await AuthService.restoreSessionWithToken();
-            if (retryResult.success) {
-              const retrySignIn = await signIn(retryResult.user.email, '');
-              if (retrySignIn.success) {
-                Alert.alert('Éxito', '¡Bienvenido de nuevo!');
-              } else {
-                Alert.alert('Error', 'No se pudo restaurar tu sesión. Por favor, inicia sesión manualmente.');
-              }
-            } else {
-              Alert.alert('Error', 'No se pudo restaurar tu sesión. Por favor, inicia sesión manualmente.');
-            }
+            Alert.alert('Error', 'No se pudo restaurar tu sesión. Por favor, inicia sesión manualmente.');
           }
         } else {
           Alert.alert('Error', result.error || 'No hay sesión guardada. Por favor, inicia sesión primero.');

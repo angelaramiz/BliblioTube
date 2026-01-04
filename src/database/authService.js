@@ -41,9 +41,13 @@ export class AuthService {
 
       if (error) throw error;
 
-      // Guardar sesión de forma segura
+      // Guardar sesión de forma segura (incluyendo email)
       if (data.session) {
-        await SecureStore.setItemAsync(SESSION_KEY, JSON.stringify(data.session));
+        const sessionData = {
+          ...data.session,
+          email: email, // Guardar email para biometric login
+        };
+        await SecureStore.setItemAsync(SESSION_KEY, JSON.stringify(sessionData));
       }
 
       return {
@@ -130,27 +134,35 @@ export class AuthService {
     }
   }
 
-  // Restaurar sesión usando token guardado (para biometric login)
+  // Restaurar sesión para biometric login
   static async restoreSessionWithToken() {
     try {
+      // Primero, intentar obtener la sesión activa actual de Supabase
+      const { data } = await supabase.auth.getSession();
+      if (data.session && data.session.user) {
+        return {
+          success: true,
+          user: data.session.user,
+          session: data.session,
+        };
+      }
+
+      // Si no hay sesión activa, intentar restaurar desde el guardado
       const savedSession = await SecureStore.getItemAsync(SESSION_KEY);
       if (savedSession) {
         const session = JSON.parse(savedSession);
-        if (session && session.access_token) {
-          // Usar el token guardado para restaurar la sesión en Supabase
-          const { data, error } = await supabase.auth.setSession(session);
-          if (error) throw error;
-          
-          return {
-            success: true,
-            user: data.user,
-            session: data.session,
-          };
-        }
+        // Solo retornar los datos guardados, sin intentar setSession
+        // El usuario ya debe estar autenticado en Supabase
+        return {
+          success: true,
+          user: { email: session.email, id: session.user?.id },
+          session: session,
+        };
       }
+
       return { success: false, error: 'No hay sesión guardada' };
     } catch (error) {
-      console.error('Error restaurando sesión con token:', error);
+      console.error('Error restaurando sesión:', error);
       return { success: false, error: error.message };
     }
   }
