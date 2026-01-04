@@ -351,6 +351,7 @@ export class DatabaseService {
                 thumbnail: video.thumbnail,
                 description: video.description,
                 saved_at: new Date(video.savedDate).toISOString(),
+                importance: video.importance || 3,
               });
 
             if (error) {
@@ -449,8 +450,8 @@ export class DatabaseService {
           if (!existingVideo) {
             // Insertar video localmente
             await db.runAsync(
-              'INSERT OR IGNORE INTO videos (id, folderId, title, url, platform, thumbnail, description, savedDate, reminders) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-              [videoData.id, videoData.folder_id, videoData.title, videoData.url, videoData.platform, videoData.thumbnail, videoData.description, new Date(videoData.saved_at).getTime(), '[]']
+              'INSERT OR IGNORE INTO videos (id, folderId, title, url, platform, thumbnail, description, savedDate, reminders, importance) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+              [videoData.id, videoData.folder_id, videoData.title, videoData.url, videoData.platform, videoData.thumbnail, videoData.description, new Date(videoData.saved_at).getTime(), '[]', videoData.importance || 3]
             );
             console.log('Video descargado:', videoData.title);
 
