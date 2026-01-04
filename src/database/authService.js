@@ -111,6 +111,31 @@ export class AuthService {
     }
   }
 
+  // Restaurar sesión usando token guardado (para biometric login)
+  static async restoreSessionWithToken() {
+    try {
+      const savedSession = await SecureStore.getItemAsync(SESSION_KEY);
+      if (savedSession) {
+        const session = JSON.parse(savedSession);
+        if (session && session.access_token) {
+          // Usar el token guardado para restaurar la sesión en Supabase
+          const { data, error } = await supabase.auth.setSession(session);
+          if (error) throw error;
+          
+          return {
+            success: true,
+            user: data.user,
+            session: data.session,
+          };
+        }
+      }
+      return { success: false, error: 'No hay sesión guardada' };
+    } catch (error) {
+      console.error('Error restaurando sesión con token:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
   // Verificar disponibilidad de biometría
   static async isBiometricAvailable() {
     try {

@@ -34,17 +34,29 @@ export default function LoginScreen({ navigation }) {
     try {
       const authenticated = await AuthService.authenticateWithBiometric();
       if (authenticated) {
-        // Restaurar sesión guardada
-        const savedSession = await AuthService.restoreSavedSession();
-        if (savedSession && savedSession.user) {
-          const result = await signIn(null, null);
-          if (result.success) {
+        // Restaurar sesión usando el token guardado
+        const result = await AuthService.restoreSessionWithToken();
+        if (result.success && result.user) {
+          // Dispatch directamente sin necesidad de email/password
+          const signInResult = await signIn(result.user.email, '');
+          if (signInResult.success) {
             Alert.alert('Éxito', '¡Bienvenido de nuevo!');
           } else {
-            Alert.alert('Error', 'No se pudo restaurar tu sesión');
+            // Si hay error, intenta una vez más
+            const retryResult = await AuthService.restoreSessionWithToken();
+            if (retryResult.success) {
+              const retrySignIn = await signIn(retryResult.user.email, '');
+              if (retrySignIn.success) {
+                Alert.alert('Éxito', '¡Bienvenido de nuevo!');
+              } else {
+                Alert.alert('Error', 'No se pudo restaurar tu sesión. Por favor, inicia sesión manualmente.');
+              }
+            } else {
+              Alert.alert('Error', 'No se pudo restaurar tu sesión. Por favor, inicia sesión manualmente.');
+            }
           }
         } else {
-          Alert.alert('Error', 'No hay sesión guardada');
+          Alert.alert('Error', result.error || 'No hay sesión guardada. Por favor, inicia sesión primero.');
         }
       }
     } catch (error) {
