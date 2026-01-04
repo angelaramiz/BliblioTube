@@ -33,6 +33,7 @@ export class DatabaseService {
           description TEXT,
           savedDate INTEGER NOT NULL,
           reminders TEXT DEFAULT '[]',
+          importance INTEGER DEFAULT 3,
           FOREIGN KEY (folderId) REFERENCES folders(id)
         );
       `);
@@ -111,7 +112,7 @@ export class DatabaseService {
   }
 
   // ===== OPERACIONES DE VIDEOS =====
-  static async createVideo(folderId, title, url, platform, thumbnail = null, description = '') {
+  static async createVideo(folderId, title, url, platform, thumbnail = null, description = '', importance = 3) {
     try {
       const id = uuidv4();
       const video = new Video(
@@ -122,11 +123,13 @@ export class DatabaseService {
         platform,
         thumbnail,
         description,
-        new Date().getTime()
+        new Date().getTime(),
+        [],
+        importance
       );
 
       await db.runAsync(
-        'INSERT INTO videos (id, folderId, title, url, platform, thumbnail, description, savedDate, reminders) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        'INSERT INTO videos (id, folderId, title, url, platform, thumbnail, description, savedDate, reminders, importance) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
         [
           video.id,
           video.folderId,
@@ -137,6 +140,7 @@ export class DatabaseService {
           video.description,
           video.savedDate,
           JSON.stringify([]),
+          video.importance,
         ]
       );
 
@@ -160,6 +164,42 @@ export class DatabaseService {
     }
   }
 
+  static async getVideosByFolderWithFilters(folderId, filters = {}) {
+    try {
+      let query = 'SELECT * FROM videos WHERE folderId = ?';
+      const params = [folderId];
+
+      // Aplicar filtro de plataforma
+      if (filters.platforms && filters.platforms.length > 0) {
+        const placeholders = filters.platforms.map(() => '?').join(',');
+        query += ` AND platform IN (${placeholders})`;
+        params.push(...filters.platforms);
+      }
+
+      // Aplicar filtro de importancia
+      if (filters.minImportance !== undefined || filters.maxImportance !== undefined) {
+        if (filters.minImportance !== undefined) {
+          query += ' AND importance >= ?';
+          params.push(filters.minImportance);
+        }
+        if (filters.maxImportance !== undefined) {
+          query += ' AND importance <= ?';
+          params.push(filters.maxImportance);
+        }
+      }
+
+      // Aplicar ordenamiento por fecha
+      const sortBy = filters.sortBy || 'newest';
+      query += sortBy === 'newest' ? ' ORDER BY savedDate DESC' : ' ORDER BY savedDate ASC';
+
+      const result = await db.getAllAsync(query, params);
+      return result.map(row => Video.fromJSON(row));
+    } catch (error) {
+      console.error('Error obteniendo videos con filtros:', error);
+      return [];
+    }
+  }
+
   static async getVideoById(videoId) {
     try {
       const result = await db.getFirstAsync(
@@ -173,12 +213,19 @@ export class DatabaseService {
     }
   }
 
-  static async updateVideo(id, title, description, thumbnail) {
+  static async updateVideo(id, title, description, thumbnail, importance = null) {
     try {
-      await db.runAsync(
-        'UPDATE videos SET title = ?, description = ?, thumbnail = ? WHERE id = ?',
-        [title, description, thumbnail, id]
-      );
+      if (importance !== null) {
+        await db.runAsync(
+          'UPDATE videos SET title = ?, description = ?, thumbnail = ?, importance = ? WHERE id = ?',
+          [title, description, thumbnail, importance, id]
+        );
+      } else {
+        await db.runAsync(
+          'UPDATE videos SET title = ?, description = ?, thumbnail = ? WHERE id = ?',
+          [title, description, thumbnail, id]
+        );
+      }
     } catch (error) {
       console.error('Error actualizando video:', error);
     }

@@ -1,5 +1,5 @@
 export class Video {
-  constructor(id, folderId, title, url, platform, thumbnail, description, savedDate, reminders = []) {
+  constructor(id, folderId, title, url, platform, thumbnail, description, savedDate, reminders = [], importance = 3) {
     this.id = id;
     this.folderId = folderId;
     this.title = title;
@@ -9,6 +9,7 @@ export class Video {
     this.description = description;
     this.savedDate = savedDate; // timestamp
     this.reminders = reminders; // array de recordatorios
+    this.importance = importance; // 1-5 nivel de importancia
   }
 
   static fromJSON(json) {
@@ -21,7 +22,8 @@ export class Video {
       json.thumbnail,
       json.description,
       json.savedDate,
-      json.reminders ? JSON.parse(json.reminders) : []
+      json.reminders ? JSON.parse(json.reminders) : [],
+      json.importance || 3
     );
   }
 

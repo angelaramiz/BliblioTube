@@ -11,6 +11,7 @@ import {
   Modal,
   SafeAreaView,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { DatabaseService } from '../database/db';
 import { AuthService } from '../database/authService';
 import { extractTitleFromUrl } from '../utils/videoMetadataExtractor';
@@ -20,6 +21,7 @@ export default function QuickSaveScreen({ route, navigation }) {
   const [videoTitle, setVideoTitle] = useState('');
   const [folders, setFolders] = useState([]);
   const [selectedFolderId, setSelectedFolderId] = useState(null);
+  const [importance, setImportance] = useState(3);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [user, setUser] = useState(null);
@@ -82,7 +84,11 @@ export default function QuickSaveScreen({ route, navigation }) {
       await DatabaseService.createVideo(
         selectedFolderId,
         videoTitle || 'Sin título',
-        videoUrl
+        videoUrl,
+        'unknown', // platform
+        null, // thumbnail
+        '', // description
+        importance
       );
 
       Alert.alert('Éxito', 'Video guardado correctamente', [
@@ -178,6 +184,40 @@ export default function QuickSaveScreen({ route, navigation }) {
           ) : (
             <Text style={styles.noFolders}>No tienes carpetas creadas</Text>
           )}
+        </View>
+
+        {/* Nivel de importancia */}
+        <View style={styles.section}>
+          <Text style={styles.label}>Nivel de Importancia:</Text>
+          <View style={styles.importanceContainer}>
+            {[1, 2, 3, 4, 5].map((level) => (
+              <Pressable
+                key={level}
+                style={[
+                  styles.starButton,
+                  importance >= level && styles.starButtonActive,
+                ]}
+                onPress={() => setImportance(level)}
+              >
+                <Ionicons
+                  name={importance >= level ? 'star' : 'star-outline'}
+                  size={24}
+                  color={
+                    importance >= level
+                      ? level <= 2
+                        ? '#ef4444'
+                        : level === 3
+                        ? '#eab308'
+                        : '#22c55e'
+                      : '#d1d5db'
+                  }
+                />
+              </Pressable>
+            ))}
+          </View>
+          <Text style={styles.importanceLabel}>
+            {['Muy Baja', 'Baja', 'Media', 'Alta', 'Muy Alta'][importance - 1]}
+          </Text>
         </View>
       </View>
 
@@ -354,5 +394,22 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: '#fff',
+  },
+  importanceContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginBottom: 8,
+  },
+  starButton: {
+    padding: 4,
+  },
+  starButtonActive: {
+    opacity: 1,
+  },
+  importanceLabel: {
+    textAlign: 'center',
+    fontSize: 12,
+    color: '#666',
+    fontWeight: '500',
   },
 });

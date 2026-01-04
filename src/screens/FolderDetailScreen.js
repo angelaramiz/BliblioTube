@@ -10,9 +10,11 @@ import {
   TextInput,
   ActivityIndicator,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { DatabaseService } from '../database/db';
 import { VideoMetadataExtractor } from '../utils/videoMetadataExtractor';
 import VideoCard from '../components/VideoCard';
+import { FilterModal } from '../components/FilterModal';
 
 export default function FolderDetailScreen({ route, navigation }) {
   const { folderId, folderName, openAddVideoWithUrl } = route.params;
@@ -22,10 +24,36 @@ export default function FolderDetailScreen({ route, navigation }) {
   const [videoUrl, setVideoUrl] = useState('');
   const [videoTitle, setVideoTitle] = useState('');
   const [videoDescription, setVideoDescription] = useState('');
+  const [filterModalVisible, setFilterModalVisible] = useState(false);
+  const [activeFilters, setActiveFilters] = useState({
+    platforms: [],
+    sortBy: 'newest',
+    minImportance: 1,
+    maxImportance: 5,
+  });
 
   useEffect(() => {
     loadVideos();
   }, [folderId]);
+
+  useEffect(() => {
+    // Recargar videos cuando cambian los filtros
+    loadVideos();
+  }, [activeFilters]);
+
+  useEffect(() => {
+    // Configurar el botón de filtros en el header
+    navigation.setOptions({
+      headerRight: () => (
+        <Pressable
+          style={{ marginRight: 16 }}
+          onPress={() => setFilterModalVisible(true)}
+        >
+          <Ionicons name="funnel" size={24} color="#fff" />
+        </Pressable>
+      ),
+    });
+  }, [navigation]);
 
   useEffect(() => {
     // Si viene con una URL desde deep linking, abrirla automáticamente
@@ -48,7 +76,16 @@ export default function FolderDetailScreen({ route, navigation }) {
   const loadVideos = async () => {
     try {
       setLoading(true);
-      const allVideos = await DatabaseService.getVideosByFolder(folderId);
+      // Usar filtros si están activos
+      const hasActiveFilters =
+        activeFilters.platforms.length > 0 ||
+        activeFilters.sortBy !== 'newest' ||
+        activeFilters.minImportance !== 1 ||
+        activeFilters.maxImportance !== 5;
+
+      const allVideos = hasActiveFilters
+        ? await DatabaseService.getVideosByFolderWithFilters(folderId, activeFilters)
+        : await DatabaseService.getVideosByFolder(folderId);
       setVideos(allVideos);
     } catch (error) {
       Alert.alert('Error', 'Error cargando videos');
@@ -272,6 +309,14 @@ export default function FolderDetailScreen({ route, navigation }) {
           </View>
         </View>
       </Modal>
+
+      {/* Filter Modal */}
+      <FilterModal
+        visible={filterModalVisible}
+        onClose={() => setFilterModalVisible(false)}
+        onApplyFilters={setActiveFilters}
+        currentFilters={activeFilters}
+      />
     </View>
   );
 }
