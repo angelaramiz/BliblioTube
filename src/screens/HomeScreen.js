@@ -39,6 +39,18 @@ export default function HomeScreen({ navigation, route }) {
     '#8b5cf6', // Violet
     '#ef4444', // Red
     '#14b8a6', // Teal
+    '#f97316', // Orange
+    '#06b6d4', // Sky Blue
+    '#a855f7', // Purple
+    '#ec4899', // Rose
+    '#0ea5e9', // Bright Blue
+    '#84cc16', // Lime
+    '#f43f5e', // Crimson
+    '#06b6d4', // Turquoise
+    '#d946ef', // Fuchsia
+    '#3b82f6', // Blue
+    '#10b981', // Green
+    '#f59e0b', // Yellow
   ];
 
   useEffect(() => {
@@ -608,19 +620,32 @@ const styles = StyleSheet.create({
   colorGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
+    gap: 10,
+    justifyContent: 'space-between',
+  },
+  colorPickerContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    justifyContent: 'space-between',
   },
   colorOption: {
-    width: '18%',
+    width: '22%',
     aspectRatio: 1,
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
   },
   colorOptionSelected: {
-    borderWidth: 3,
+    borderWidth: 4,
     borderColor: '#fff',
-    elevation: 5,
+    elevation: 8,
+    shadowOpacity: 0.4,
   },
   checkmark: {
     color: '#fff',
