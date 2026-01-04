@@ -17,9 +17,11 @@ import { NotificationService } from '../utils/notificationService';
 import { VideoMetadataExtractor } from '../utils/videoMetadataExtractor';
 import { formatDate } from '../utils/dateFormat';
 import { ReminderModal } from '../components/ReminderModal';
+import { Toast, useToast } from '../components/Toast';
 
 export default function VideoDetailScreen({ route, navigation }) {
   const { videoId } = route.params;
+  const { toast, showSuccess, showError } = useToast();
   const [video, setVideo] = useState(null);
   const [reminders, setReminders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -39,10 +41,10 @@ export default function VideoDetailScreen({ route, navigation }) {
         const remindersData = await DatabaseService.getRemindersByVideo(videoId);
         setReminders(remindersData);
       } else {
-        Alert.alert('Error', 'No se encontró el video');
+        showError('No se encontró el video');
       }
     } catch (error) {
-      Alert.alert('Error', error.message);
+      showError(error.message);
     } finally {
       setLoading(false);
     }
@@ -61,9 +63,9 @@ export default function VideoDetailScreen({ route, navigation }) {
       await NotificationService.scheduleReminder(reminder, video.title);
       await loadVideoData();
       setReminderModalVisible(false);
-      Alert.alert('Éxito', 'Recordatorio configurado');
+      showSuccess('Recordatorio configurado');
     } catch (error) {
-      Alert.alert('Error', error.message);
+      showError(error.message);
     }
   };
 
@@ -79,9 +81,9 @@ export default function VideoDetailScreen({ route, navigation }) {
             try {
               await DatabaseService.deleteReminder(reminderId);
               await loadVideoData();
-              Alert.alert('Éxito', 'Recordatorio eliminado');
+              showSuccess('Recordatorio eliminado');
             } catch (error) {
-              Alert.alert('Error', error.message);
+              showError(error.message);
             }
           },
           style: 'destructive',
@@ -101,9 +103,9 @@ export default function VideoDetailScreen({ route, navigation }) {
       );
       setVideo({ ...video, importance: newImportance });
       setEditingImportance(false);
-      Alert.alert('Éxito', 'Importancia actualizada');
+      showSuccess('Importancia actualizada');
     } catch (error) {
-      Alert.alert('Error', 'No se pudo actualizar la importancia');
+      showError('No se pudo actualizar la importancia');
     }
   };
 
@@ -114,7 +116,7 @@ export default function VideoDetailScreen({ route, navigation }) {
         await Linking.openURL(video.url);
       } catch (error) {
         console.error('Error abriendo URL:', error);
-        Alert.alert('Error', 'No se puede abrir esta URL. Verifica que tienes navegador instalado.');
+        showError('No se puede abrir esta URL. Verifica que tienes navegador instalado.');
       }
     }
   };
@@ -354,6 +356,8 @@ export default function VideoDetailScreen({ route, navigation }) {
         onClose={() => setReminderModalVisible(false)}
         onSave={handleSaveReminder}
       />
+      
+      <Toast {...toast} />
     </ScrollView>
   );
 }

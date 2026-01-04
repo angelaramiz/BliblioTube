@@ -10,9 +10,11 @@ import {
   ScrollView,
 } from 'react-native';
 import { AuthContext } from '../context/AuthContext';
+import { Toast, useToast } from '../components/Toast';
 
 export default function RegisterScreen({ navigation }) {
   const { signUp } = React.useContext(AuthContext);
+  const { toast, showSuccess, showError } = useToast();
   const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -23,17 +25,17 @@ export default function RegisterScreen({ navigation }) {
 
   const handleRegister = async () => {
     if (!email || !username || !password || !confirmPassword) {
-      Alert.alert('Error', 'Por favor completa todos los campos');
+      showError('Por favor completa todos los campos');
       return;
     }
 
     if (password !== confirmPassword) {
-      Alert.alert('Error', 'Las contraseñas no coinciden');
+      showError('Las contraseñas no coinciden');
       return;
     }
 
     if (password.length < 6) {
-      Alert.alert('Error', 'La contraseña debe tener al menos 6 caracteres');
+      showError('La contraseña debe tener al menos 6 caracteres');
       return;
     }
 
@@ -42,13 +44,13 @@ export default function RegisterScreen({ navigation }) {
       const result = await signUp(email, password, username);
 
       if (result.success) {
-        Alert.alert('Éxito', '¡Cuenta creada! Serás redirigido automáticamente');
+        showSuccess('¡Cuenta creada! Serás redirigido automáticamente');
         // La navegación se maneja automáticamente en App.js
       } else {
-        Alert.alert('Error de registro', result.error || 'Error desconocido');
+        showError(result.error || 'Error desconocido');
       }
     } catch (error) {
-      Alert.alert('Error', error.message);
+      showError(error.message);
     } finally {
       setLoading(false);
     }
@@ -174,6 +176,8 @@ export default function RegisterScreen({ navigation }) {
           <Text style={styles.loginLink}>Inicia sesión aquí</Text>
         </Pressable>
       </View>
+      
+      <Toast {...toast} />
     </ScrollView>
   );
 }

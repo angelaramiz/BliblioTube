@@ -11,9 +11,11 @@ import {
 } from 'react-native';
 import { AuthContext } from '../context/AuthContext';
 import { AuthService } from '../database/authService';
+import { Toast, useToast } from '../components/Toast';
 
 export default function LoginScreen({ navigation }) {
   const { signIn, signInWithRestoredSession } = React.useContext(AuthContext);
+  const { toast, showSuccess, showError } = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -45,14 +47,14 @@ export default function LoginScreen({ navigation }) {
             // Cerrar alerta después de 1 segundo
             setTimeout(() => {}, 1000);
           } else {
-            Alert.alert('Error', 'No se pudo completar el login. Intenta de nuevo.');
+            showError('No se pudo completar el login. Intenta de nuevo.');
           }
         } else {
-          Alert.alert('Error', result.error || 'No hay sesión guardada. Por favor, inicia sesión primero.');
+          showError(result.error || 'No hay sesión guardada. Por favor, inicia sesión primero.');
         }
       }
     } catch (error) {
-      Alert.alert('Error', 'Error en autenticación biométrica: ' + error.message);
+      showError('Error en autenticación biométrica: ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -60,7 +62,7 @@ export default function LoginScreen({ navigation }) {
 
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert('Error', 'Por favor completa todos los campos');
+      showError('Por favor completa todos los campos');
       return;
     }
 
@@ -69,13 +71,13 @@ export default function LoginScreen({ navigation }) {
       const result = await signIn(email, password);
 
       if (result.success) {
-        Alert.alert('Éxito', '¡Bienvenido a BiblioTube!');
+        showSuccess('¡Bienvenido a BiblioTube!');
         // La navegación se maneja automáticamente en App.js
       } else {
-        Alert.alert('Error de inicio de sesión', result.error || 'Error desconocido');
+        showError(result.error || 'Error desconocido');
       }
     } catch (error) {
-      Alert.alert('Error', error.message);
+      showError(error.message);
     } finally {
       setLoading(false);
     }
@@ -196,6 +198,8 @@ export default function LoginScreen({ navigation }) {
           Para las pruebas, usa Supabase configurado en src/config/supabase.js
         </Text>
       </View>
+      
+      <Toast {...toast} />
     </ScrollView>
   );
 }

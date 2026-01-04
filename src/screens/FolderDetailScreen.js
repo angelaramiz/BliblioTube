@@ -15,9 +15,11 @@ import { DatabaseService } from '../database/db';
 import { VideoMetadataExtractor } from '../utils/videoMetadataExtractor';
 import VideoCard from '../components/VideoCard';
 import { FilterModal } from '../components/FilterModal';
+import { Toast, useToast } from '../components/Toast';
 
 export default function FolderDetailScreen({ route, navigation }) {
   const { folderId, folderName, openAddVideoWithUrl } = route.params;
+  const { toast, showSuccess, showError } = useToast();
   const [videos, setVideos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
@@ -88,7 +90,7 @@ export default function FolderDetailScreen({ route, navigation }) {
         : await DatabaseService.getVideosByFolder(folderId);
       setVideos(allVideos);
     } catch (error) {
-      Alert.alert('Error', 'Error cargando videos');
+      showError('Error cargando videos');
       console.error(error);
     } finally {
       setLoading(false);
@@ -116,7 +118,7 @@ export default function FolderDetailScreen({ route, navigation }) {
 
   const handleAddVideo = async () => {
     if (!videoUrl.trim() || !videoTitle.trim()) {
-      Alert.alert('Error', 'Por favor completa URL y título');
+      showError('Por favor completa URL y título');
       return;
     }
 
@@ -139,9 +141,9 @@ export default function FolderDetailScreen({ route, navigation }) {
 
       closeModalAndClear();
       await loadVideos();
-      Alert.alert('Éxito', 'Video agregado correctamente');
+      showSuccess('Video agregado correctamente');
     } catch (error) {
-      Alert.alert('Error', error.message);
+      showError(error.message);
     }
   };
 
@@ -164,9 +166,9 @@ export default function FolderDetailScreen({ route, navigation }) {
             try {
               await DatabaseService.deleteVideo(videoId);
               await loadVideos();
-              Alert.alert('Éxito', 'Video eliminado');
+              showSuccess('Video eliminado');
             } catch (error) {
-              Alert.alert('Error', error.message);
+              showError(error.message);
             }
           },
           style: 'destructive',
@@ -317,6 +319,8 @@ export default function FolderDetailScreen({ route, navigation }) {
         onApplyFilters={setActiveFilters}
         currentFilters={activeFilters}
       />
+      
+      <Toast {...toast} />
     </View>
   );
 }

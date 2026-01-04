@@ -16,9 +16,11 @@ import { AuthService } from '../database/authService';
 import { AuthContext } from '../context/AuthContext';
 import FolderCard from '../components/FolderCard';
 import { SelectFolderModal } from '../components/SelectFolderModal';
+import { Toast, useToast } from '../components/Toast';
 
 export default function HomeScreen({ navigation, route }) {
   const authContext = useContext(AuthContext);
+  const { toast, showSuccess, showError, showInfo } = useToast();
   const [folders, setFolders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
@@ -92,11 +94,11 @@ export default function HomeScreen({ navigation, route }) {
         setUser(currentUser);
         await loadFolders();
       } else {
-        Alert.alert('Error', 'No se pudo obtener la información del usuario');
+        showError('No se pudo obtener la información del usuario');
       }
     } catch (error) {
       console.error('Error inicializando:', error);
-      Alert.alert('Error', 'Error al inicializar la aplicación');
+      showError('Error al inicializar la aplicación');
     } finally {
       setLoading(false);
     }
@@ -116,7 +118,7 @@ export default function HomeScreen({ navigation, route }) {
 
   const handleCreateFolder = async () => {
     if (!newFolderName.trim()) {
-      Alert.alert('Error', 'Por favor ingresa un nombre para la carpeta');
+      showError('Por favor ingresa un nombre para la carpeta');
       return;
     }
 
@@ -132,10 +134,10 @@ export default function HomeScreen({ navigation, route }) {
         setSelectedColor('#6366f1');
         setModalVisible(false);
         await loadFolders();
-        Alert.alert('Éxito', 'Carpeta creada correctamente');
+        showSuccess('Carpeta creada correctamente');
       }
     } catch (error) {
-      Alert.alert('Error', error.message);
+      showError(error.message);
     }
   };
 
@@ -151,9 +153,9 @@ export default function HomeScreen({ navigation, route }) {
             try {
               await DatabaseService.deleteFolder(folderId);
               await loadFolders();
-              Alert.alert('Éxito', 'Carpeta eliminada');
+              showSuccess('Carpeta eliminada');
             } catch (error) {
-              Alert.alert('Error', error.message);
+              showError(error.message);
             }
           },
           style: 'destructive',
@@ -189,7 +191,7 @@ export default function HomeScreen({ navigation, route }) {
 
   const handleSaveEditFolder = async () => {
     if (!editFolderName.trim()) {
-      Alert.alert('Error', 'Por favor ingresa un nombre');
+      showError('Por favor ingresa un nombre');
       return;
     }
 
@@ -197,9 +199,9 @@ export default function HomeScreen({ navigation, route }) {
       await DatabaseService.updateFolder(editingFolder.id, editFolderName, editFolderColor);
       await loadFolders();
       setEditModalVisible(false);
-      Alert.alert('Éxito', 'Carpeta actualizada correctamente');
+      showSuccess('Carpeta actualizada correctamente');
     } catch (error) {
-      Alert.alert('Error', error.message);
+      showError(error.message);
     }
   };
 

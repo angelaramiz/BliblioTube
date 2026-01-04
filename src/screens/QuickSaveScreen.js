@@ -15,8 +15,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { DatabaseService } from '../database/db';
 import { AuthService } from '../database/authService';
 import { extractTitleFromUrl } from '../utils/videoMetadataExtractor';
+import { Toast, useToast } from '../components/Toast';
 
 export default function QuickSaveScreen({ route, navigation }) {
+  const { toast, showSuccess, showError } = useToast();
   const [videoUrl, setVideoUrl] = useState('');
   const [videoTitle, setVideoTitle] = useState('');
   const [folders, setFolders] = useState([]);
@@ -55,7 +57,7 @@ export default function QuickSaveScreen({ route, navigation }) {
       }
     } catch (error) {
       console.error('Error inicializando quick save:', error);
-      Alert.alert('Error', 'Error al procesar el enlace');
+      showError('Error al procesar el enlace');
     } finally {
       setLoading(false);
     }
@@ -75,7 +77,7 @@ export default function QuickSaveScreen({ route, navigation }) {
 
   const handleSaveVideo = async () => {
     if (!selectedFolderId) {
-      Alert.alert('Error', 'Por favor selecciona una carpeta');
+      showError('Por favor selecciona una carpeta');
       return;
     }
 
@@ -91,11 +93,10 @@ export default function QuickSaveScreen({ route, navigation }) {
         importance
       );
 
-      Alert.alert('Éxito', 'Video guardado correctamente', [
-        { text: 'OK', onPress: () => goBackToSource() },
-      ]);
+      showSuccess('Video guardado correctamente');
+      setTimeout(() => goBackToSource(), 1500);
     } catch (error) {
-      Alert.alert('Error', 'No se pudo guardar el video: ' + error.message);
+      showError('No se pudo guardar el video: ' + error.message);
     } finally {
       setSaving(false);
     }
@@ -246,6 +247,8 @@ export default function QuickSaveScreen({ route, navigation }) {
           )}
         </Pressable>
       </View>
+      
+      <Toast {...toast} />
     </SafeAreaView>
   );
 }
